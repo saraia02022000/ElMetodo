@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Trading" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Trading Dashboard</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    
+    @media (prefers-color-scheme: dark) {
+      body { background: #0a0a0a; color: #f5f5f5; }
+      input, button, textarea { background: #1a1a1a; color: #f5f5f5; border-color: #333; }
+      .card { background: #1a1a1a; border-color: #2a2a2a; }
+      .label { color: #999; }
+      .table-row { border-color: #2a2a2a; }
+    }
+    
+    @media (prefers-color-scheme: light) {
+      body { background: #f8f9fa; color: #1a1a1a; }
+      input, button, textarea { background: #ffffff; color: #1a1a1a; border-color: #ddd; }
+      .card { background: #ffffff; border-color: #eee; }
+      .label { color: #666; }
+      .table-row { border-color: #eee; }
+    }
+    
+    body { line-height: 1.4; }
+    input, button, textarea { -webkit-appearance: none; font-family: inherit; font-size: 16px; }
+    button { -webkit-tap-highlight-color: transparent; cursor: pointer; }
+    textarea { resize: vertical; }
+    
+    #root { min-height: 100dvh; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 12px; padding-bottom: 20px; padding-top: max(12px, env(safe-area-inset-top)); }
+    
+    .tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 2px solid #ddd; }
+    @media (prefers-color-scheme: dark) { .tabs { border-bottom-color: #2a2a2a; } }
+    .tab-btn { padding: 10px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; font-size: 14px; color: #999; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .tab-btn.active { color: #007AFF; border-bottom-color: #007AFF; }
+    
+    .header { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+    .header input { flex: 1; padding: 10px 12px; border: 1px solid; border-radius: 8px; min-width: 100px; font-size: 15px; }
+    .header button { padding: 10px 14px; border: 1px solid; border-radius: 8px; font-weight: 600; font-size: 14px; }
+    .header button.primary { background: #007AFF; color: white; border-color: #007AFF; }
+    
+    .card { border: 1px solid; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+    
+    .signal { padding: 11px 13px; border-radius: 10px; font-weight: 700; font-size: 13px; margin-bottom: 12px; text-align: center; }
+    .signal.buy { background: #34C759; color: white; }
+    .signal.watch { background: #FF9500; color: white; }
+    .signal.none { background: #e5e5e5; color: #666; }
+    @media (prefers-color-scheme: dark) { .signal.none { background: #2a2a2a; color: #999; } }
+    
+    .label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin: 10px 0 6px 0; display: block; }
+    
+    .conditions { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; margin-bottom: 12px; }
+    .cond { padding: 9px 6px; text-align: center; border-radius: 8px; border: 1.5px solid; font-size: 11px; }
+    .cond.ok { border-color: #34C759; background: rgba(52, 199, 89, 0.1); }
+    .cond.no { border-color: #FF3B30; background: rgba(255, 59, 48, 0.1); }
+    .cond-icon { font-size: 16px; margin-bottom: 2px; }
+    .cond-name { font-weight: 600; font-size: 10px; }
+    
+    .stats { display: grid; grid-template-columns:repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
+    .stat { padding: 9px 6px; text-align: center; border-radius: 8px; background: rgba(0,0,0,0.03); font-size: 11px; }
+    @media (prefers-color-scheme: dark) { .stat { background: rgba(255,255,255,0.05); } }
+    .stat-val { font-size: 15px; font-weight: 700; display: block; margin: 3px 0; }
+    .stat-label { font-size: 9px; color: #666; }
+    @media (prefers-color-scheme: dark) { .stat-label { color: #999; } }
+    
+    .currency-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+    .currency-toggle button { flex: 1; padding: 8px; border: 1.5px solid #007AFF; border-radius: 8px; background: transparent; color: #007AFF; font-weight: 600; font-size: 12px; }
+    .currency-toggle button.active { background: #007AFF; color: white; }
+    
+    .levels-pair { margin-bottom: 12px; }
+    .levels-pair-title { font-size: 10px; font-weight: 700; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    @media (prefers-color-scheme: dark) { .levels-pair-title { color: #999; } }
+    .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .level { padding: 10px 6px; text-align: center; border-radius: 8px; background: rgba(0,0,0,0.03); font-size: 10px; }
+    @media (prefers-color-scheme: dark) { .level { background: rgba(255,255,255,0.05); } }
+    .level-price { font-size: 13px; font-weight: 700; color: #007AFF; margin: 4px 0; font-family: 'Menlo', monospace; }
+    .level.tp .level-price { color: #34C759; }
+    .level.sl .level-price { color: #FF3B30; }
+    .level-label { font-size: 9px; font-weight: 700; margin-bottom: 2px; }
+    
+    .exchange-info { font-size: 11px; padding: 8px; text-align: center; }
+    
+    /* Análisis de símbolos */
+    .add-form { display: flex; gap: 8px; margin-bottom: 12px; }
+    .add-form input { flex: 1; padding: 10px 12px; border: 1px solid; border-radius: 8px; font-size: 14px; }
+    .add-form button { padding: 10px 14px; background: #007AFF; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+    
+    textarea.symbol-list { width: 100%; padding: 10px 12px; border: 1px solid; border-radius: 8px; font-size: 13px; font-family: monospace; min-height: 100px; margin-bottom: 10px; }
+    
+    .table-row { display: grid; grid-template-columns: 80px 1fr 80px; gap: 10px; padding: 10px; border: 1px solid; border-radius: 8px; align-items: center; margin-bottom: 6px; }
+    .table-sym { font-weight: 700; font-size: 14px; }
+    .table-score { font-size: 13px; font-weight: 600; }
+    .score-badge { padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 12px; text-align: center; color: white; }
+    .score-0 { background: #FF3B30; }
+    .score-1 { background: #FF3B30; }
+    .score-2 { background: #FF9500; }
+    .score-3 { background: #FFCC00; color: #333; }
+    .score-4 { background: #34C759; }
+    .score-5 { background: #00C853; }
+    .table-btn { padding: 6px 10px; font-size: 12px; border: none; background: #FF3B30; color: white; border-radius: 6px; cursor: pointer; }
+    .table-status { font-size: 11px; color: #666; text-align: center; }
+    @media (prefers-color-scheme: dark) { .table-status { color: #999; } }
+    
+    .rate-limit { font-size: 11px; padding: 8px; background: rgba(0,0,0,0.03); border-radius: 8px; margin-bottom: 10px; }
+    @media (prefers-color-scheme: dark) { .rate-limit { background: rgba(255,255,255,0.05); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+<script>
+const f2 = v => (v != null && !isNaN(v)) ? (+v).toFixed(2) : '—';
+const f1 = v => (v != null && !isNaN(v)) ? (+v).toFixed(1) : '—';
+
+function calcEMA(closes, p) {
+  if (!closes?.length) return [];
+  const k = 2 / (p + 1);
+  let ema = closes[0];
+  return closes.map((c, i) => {
+    ema = i === 0 ? c : c * k + ema * (1 - k);
+    return i < Math.min(p - 1, 3) ? null : +ema.toFixed(3);
+  });
+}
+
+function calcRSI(closes, p = 14) {
+  if (closes.length < p + 1) return null;
+  let ag = 0, al = 0;
+  for (let i = 1; i <= p; i++) {
+    const d = closes[i] - closes[i-1];
+    d > 0 ? ag += d : al -= d;
+  }
+  ag /= p; al /= p;
+  for (let i = p + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i-1];
+    ag = (ag*(p-1) + Math.max(d, 0)) / p;
+    al = (al*(p-1) + Math.max(-d, 0)) / p;
+  }
+  return al === 0 ? 100 : +(100 - 100/(1 + ag/al)).toFixed(1);
+}
+
+function calcATR(bars, p = 14) {
+  if (bars.length < p + 1) return null;
+  const trs = bars.slice(1).map((b, i) => {
+    const pc = bars[i].close;
+    return Math.max(b.high - b.low, Math.abs(b.high - pc), Math.abs(b.low - pc));
+  });
+  let atr = trs.slice(0, p).reduce((a, b) => a + b, 0) / p;
+  for (let i = p; i < trs.length; i++) atr = (atr*(p-1) + trs[i]) / p;
+  return +atr.toFixed(4);
+}
+
+function fmtDate(str, mode) {
+  try {
+    const d = new Date((str || '').replace(' ', 'T'));
+    if (isNaN(d)) return str?.slice(0, 8) || '';
+    if (mode === 'w')  return d.toLocaleDateString('es-ES', {month:'short',year:'2-digit'});
+    if (mode === 'h4') return `${d.getMonth()+1}/${d.getDate()}`;
+    return d.toLocaleDateString('es-ES', {month:'short',day:'numeric'});
+  } catch { return str?.slice(0, 8) || ''; }
+}
+
+async function fetchExchangeRate() {
+  try {
+    // Obtener tipo de cambio del BCE (European Central Bank)
+    const res = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
+    const xml = await res.text();
+    // Buscar el rate del USD en el XML
+    const match = xml.match(/currency='USD'[^>]*rate='([^']*)/);
+    const rate = match ? parseFloat(match[1]) : null;
+    // Invertir: si 1 EUR = 1.15 USD, entonces 1 USD = 1/1.15 = 0.87 EUR
+    if (rate) {
+      localStorage.setItem('exchange_rate', (1 / rate).toFixed(4));
+      return 1 / rate;
+    }
+  } catch (e) {}
+  
+  // Si falla, intentar usar el guardado
+  const saved = localStorage.getItem('exchange_rate');
+  if (saved) return parseFloat(saved);
+  
+  // Si no hay guardado, pedir al usuario
+  const userRate = prompt('No se pudo obtener el tipo de cambio del BCE.\n\n¿Cuál es el tipo USD/EUR?\n(Ej: 0.87 para 1 USD = 0.87 EUR)');
+  if (userRate) {
+    const rate = parseFloat(userRate);
+    if (!isNaN(rate) && rate > 0) {
+      localStorage.setItem('exchange_rate', rate.toFixed(4));
+      return rate;
+    }
+  }
+  
+  return 0.87; // Último fallback
+}
+}
+
+async function fetchData(sym, key) {
+  const td = 'https://api.twelvedata.com';
+  try {
+    const [r4h, r1d] = await Promise.all([
+      fetch(`${td}/time_series?symbol=${sym}&interval=4h&outputsize=500&apikey=${key}`).then(r => r.json()),
+      fetch(`${td}/time_series?symbol=${sym}&interval=1day&outputsize=300&apikey=${key}`).then(r => r.json()),
+    ]);
+
+    if (r4h.status === 'error') throw new Error(r4h.message || 'Ticker no encontrado');
+    if (!r4h.values?.length) throw new Error('Sin datos 4H');
+
+    const parse = arr => [...(arr || [])].reverse().map(b => ({
+      date: b.datetime, open: parseFloat(b.open), high: parseFloat(b.high),
+      low: parseFloat(b.low), close: parseFloat(b.close), volume: parseInt(b.volume || 0),
+    }));
+
+    const h4 = parse(r4h.values);
+    const daily = parse(r1d.values || []);
+    const price = h4[h4.length-1]?.close;
+
+    const c4h = h4.map(b => b.close);
+    const e20a = calcEMA(c4h, 20), e50a = calcEMA(c4h, 50), e200a = calcEMA(c4h, 200);
+    const cd = daily.map(b => b.close);
+    const e200d = calcEMA(cd, 200);
+
+    const rsi = calcRSI(c4h.slice(-60));
+    const atr = calcATR(h4.slice(-60));
+    const prevDayLow = daily.length > 1 ? daily[daily.length-2]?.low : null;
+
+    const h4Chart = h4.slice(-80).map((b, i, arr) => {
+      const idx = h4.length - arr.length + i;
+      return {date: fmtDate(b.date, 'h4'), close: b.close, ema20: e20a[idx], ema50: e50a[idx], ema200: e200a[idx]};
+    });
+
+    const e20d = calcEMA(cd, 20), e50d = calcEMA(cd, 50);
+    const dailyChart = daily.slice(-60).map((b, i, arr) => {
+      const idx = daily.length - arr.length + i;
+      return {date: fmtDate(b.date, 'd'), close: b.close, ema20: e20d[idx], ema50: e50d[idx]};
+    });
+
+    const weeklyMap = {};
+    daily.forEach(b => {
+      const d = new Date(b.date.replace(' ', 'T'));
+      const key = `${d.getFullYear()}-${Math.floor(d.getTime()/(7*86400000))}`;
+      if (!weeklyMap[key]) weeklyMap[key] = b;
+    });
+    const weeklyChart = Object.values(weeklyMap).slice(-30).map(b => ({date: fmtDate(b.date, 'w'), close: b.close}));
+
+    const exchangeRate = await fetchExchangeRate();
+
+    return {
+      sym: r4h.meta?.symbol || sym,
+      price: price || 0, 
+      ema20: e20a[e20a.length-1] || 0, 
+      ema50: e50a[e50a.length-1] || 0,
+      ema200_4h: e200a[e200a.length-1] || 0, 
+      ema200_d: e200d[e200d.length-1] || 0,
+      rsi: rsi || 0, 
+      atr: atr || 0, 
+      prevDayLow: prevDayLow || 0, 
+      exchangeRate: exchangeRate || 0.88,
+      h4Chart: h4Chart || [], 
+      dailyChart: dailyChart || [], 
+      weeklyChart: weeklyChart || [],
+    };
+  } catch (e) {
+    throw new Error(e.message || 'Error al consultar API');
+  }
+}
+
+function evaluateConditions(data) {
+  const {price, ema20, ema50, ema200_d, rsi, prevDayLow} = data;
+  const c1 = price > 0 && ema200_d > 0 && price > ema200_d;
+  const c2 = ema20 > 0 && ema50 > 0 && ema20 > ema50;
+  const c3 = ema50 > 0 && Math.abs(price - ema50) / ema50 < 0.02;
+  const c4 = rsi != null && rsi >= 35 && rsi <= 60;
+  const c5 = ema50 > 0 && prevDayLow > 0 && prevDayLow >= ema50 * 0.98;
+  return [c1, c2, c3, c4, c5].filter(Boolean).length;
+}
+
+let state = {
+  apiKey: localStorage.getItem('td_key') || '',
+  tab: 'dashboard',
+  ticker: 'RGTI',
+  currency: 'USD',
+  loading: false,
+  data: null,
+  error: null,
+  symbols: [],
+  analysisResults: [],
+  analyzing: false,
+  queriesUsed: 0,
+};
+
+function setState(updates) {
+  state = {...state, ...updates};
+  render();
+}
+
+function render() {
+  const root = document.getElementById('root');
+
+  if (!state.apiKey) {
+    root.innerHTML = `
+      <div style="min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;">
+        <div style="font-size:40px; margin-bottom:16px;">📊</div>
+        <h1 style="font-size:22px; margin:0 0 6px 0; font-weight:700;">Trading Dashboard</h1>
+        <p style="color:#666; margin:0 0 20px 0; font-size:14px;">ATR Dinámico + 5 Condiciones</p>
+        
+        <div style="width:100%; max-width:300px;">
+          <label style="display:block; font-size:11px; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">API Key</label>
+          <div style="position:relative; margin-bottom:10px;">
+            <input id="keyInput" type="password" placeholder="Pega tu API key"
+              style="width:100%; padding:10px 36px 10px 12px; border:1px solid; border-radius:8px; font-size:14px;"/>
+            <button id="toggleKey" onclick="document.getElementById('keyInput').type = document.getElementById('keyInput').type === 'password' ? 'text' : 'password'"
+              style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#999; font-size:14px; cursor:pointer; padding:6px;">👁</button>
+          </div>
+          <p style="font-size:12px; color:#666; margin:0 0 14px 0; line-height:1.4;">Registro en <strong>twelvedata.com</strong><br/>Plan free: datos 4H gratis</p>
+          <button onclick="saveKey()" style="width:100%; padding:12px; background:#007AFF; color:white; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer;">Empezar</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `<div class="container">`;
+
+  // Tabs
+  html += `<div class="tabs">
+    <button class="tab-btn ${state.tab === 'dashboard' ? 'active' : ''}" onclick="setTab('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn ${state.tab === 'analysis' ? 'active' : ''}" onclick="setTab('analysis')">📈 Análisis</button>
+    <button class="tab-btn" onclick="clearKey()" style="margin-left:auto; color:#666;">⚙️</button>
+  </div>`;
+
+  if (state.tab === 'dashboard') {
+    // DASHBOARD
+    html += `<div class="header">
+      <input id="ticker" value="${state.ticker}" placeholder="AAPL, RGTI..."
+        style="border-radius:8px;"/>
+      <button class="primary" onclick="load()" ${state.loading ? 'disabled' : ''} style="border-radius:8px;">
+        ${state.loading ? '⟳' : '🔍'}
+      </button>
+    </div>`;
+
+    if (state.loading) {
+      html += `<div style="text-align:center; padding:30px 20px; color:#666;">
+        <div style="font-size:28px; margin-bottom:8px; animation:spin 1s linear infinite;">⟳</div>
+        <p style="margin:0; font-size:13px;">Cargando...</p>
+      </div>`;
+    } else if (state.error) {
+      html += `<div class="card" style="background:#fff5f5; border-color:#ffebee;">
+        <p style="margin:0; color:#c33; font-size:13px;">⚠️ ${state.error}</p>
+      </div>`;
+    } else if (state.data) {
+      const {price, ema20, ema50, ema200_4h, ema200_d, rsi, atr, prevDayLow, exchangeRate, sym} = state.data;
+      const curr = state.currency;
+      const fx = curr === 'EUR' ? exchangeRate : 1;
+      const currSymbol = curr;
+
+      const c1 = price > 0 && ema200_d > 0 && price > ema200_d;
+      const c2 = ema20 > 0 && ema50 > 0 && ema20 > ema50;
+      const c3 = ema50 > 0 && Math.abs(price - ema50) / ema50 < 0.02;
+      const c4 = rsi != null && rsi >= 35 && rsi <= 60;
+      const c5 = ema50 > 0 && prevDayLow > 0 && prevDayLow >= ema50 * 0.98;
+
+      const conds = [
+        {ok:c1, label:'Macro', detail:`p>${f2(ema200_d)}`},
+        {ok:c2, label:'EMA Align', detail:`E20>E50`},
+        {ok:c3, label:'Zona E50', detail:`±2%`},
+        {ok:c4, label:'RSI', detail:`${f1(rsi)}`},
+        {ok:c5, label:'Min Day-1', detail:`>${f2(prevDayLow)}`},
+      ];
+
+      let tp = null, sl = null;
+      if (ema50 > 0 && atr > 0) {
+        tp = +(ema50 + 2*atr).toFixed(4);
+        sl = +(ema50 - 1*atr).toFixed(4);
+      }
+
+      const n = conds.filter(c => c.ok).length;
+      const signal = n === 5 ? 'buy' : n === 4 ? 'watch' : 'none';
+
+      html += `<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div>
+          <div style="font-size:20px; font-weight:700;">${currSymbol} ${f2(price * fx)}</div>
+          <div style="font-size:12px; color:#666;">${sym}</div>
+        </div>
+        <div class="currency-toggle">
+          <button onclick="setCurrency('USD')" style="border-radius:6px; ${state.currency === 'USD' ? 'background:#007AFF; color:white;' : ''}">USD</button>
+          <button onclick="setCurrency('EUR')" style="border-radius:6px; ${state.currency === 'EUR' ? 'background:#007AFF; color:white;' : ''}">EUR</button>
+        </div>
+      </div>`;
+
+      const signalMsg = {
+        buy: '🟢 SEÑAL CONFIRMADA · 5/5',
+        watch: '🟡 VIGILAR · 4/5',
+        none: `⏳ ${n}/5`,
+      };
+      html += `<div class="signal ${signal}">${signalMsg[signal]}</div>`;
+
+      html += `<span class="label">Condiciones</span>
+      <div class="conditions">`;
+      conds.forEach(c => {
+        html += `<div class="cond ${c.ok ? 'ok' : 'no'}">
+          <div class="cond-icon">${c.ok ? '✓' : '✕'}</div>
+          <div class="cond-name">${c.label}</div>
+          <div style="font-size:9px; margin-top:2px; color:#666;">${c.detail}</div>
+        </div>`;
+      });
+      html += `</div>`;
+
+      html += `<span class="label">Indicadores 4H</span>
+      <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; margin-bottom:12px;">
+        <div class="stat"><span class="stat-val">${f2(ema20 * fx)}</span><span class="stat-label">EMA20</span></div>
+        <div class="stat"><span class="stat-val">${f2(ema50 * fx)}</span><span class="stat-label">EMA50</span></div>
+        <div class="stat"><span class="stat-val">${f2(ema200_4h * fx)}</span><span class="stat-label">EMA200</span></div>
+        <div class="stat"><span class="stat-val">${f1(rsi)}</span><span class="stat-label">RSI14</span></div>
+        <div class="stat"><span class="stat-val">${f2(atr * fx)}</span><span class="stat-label">ATR14</span></div>
+      </div>`;
+
+      html += `<span class="label">Niveles de Operación</span>`;
+      html += `<div class="levels-pair">
+        <div class="levels-pair-title">📍 Entrada Recomendada (EMA50)</div>
+        <div class="levels">
+          <div class="level"><div class="level-label">Entrada</div><div class="level-price">${currSymbol} ${f2(ema50 * fx)}</div></div>
+          <div class="level tp"><div class="level-label">TP +10%</div><div class="level-price">${currSymbol} ${f2(tp * fx)}</div></div>
+          <div class="level sl"><div class="level-label">SL -5%</div><div class="level-price">${currSymbol} ${f2(sl * fx)}</div></div>
+        </div>
+      </div>`;
+
+      html += `<div class="levels-pair">
+        <div class="levels-pair-title">💰 Desde Precio Actual</div>
+        <div class="levels">
+          <div class="level"><div class="level-label">Ahora</div><div class="level-price">${currSymbol} ${f2(price * fx)}</div></div>
+          <div class="level tp"><div class="level-label">TP +10%</div><div class="level-price">${currSymbol} ${f2((price * 1.10) * fx)}</div></div>
+          <div class="level sl"><div class="level-label">SL -5%</div><div class="level-price">${currSymbol} ${f2((price * 0.95) * fx)}</div></div>
+        </div>
+      </div>`;
+
+      html += `<div class="card exchange-info">1 USD = ${f2(exchangeRate)} EUR</div>`;
+    }
+  } else {
+    // ANÁLISIS
+    html += `<span class="label">Añadir Empresa</span>
+    <div class="add-form">
+      <input id="symbolInput" type="text" placeholder="Ej: AAPL, MSFT..." style="border-radius:8px;"/>
+      <button onclick="addSymbol()" style="border-radius:8px;">+</button>
+    </div>
+
+    <span class="label">O Pegar Lista</span>
+    <textarea class="symbol-list" id="symbolListInput" placeholder="Pega símbolos separados por comas o saltos de línea&#10;Ej:&#10;AAPL&#10;MSFT&#10;GOOGL" style="border-radius:8px;"></textarea>
+    
+    <div style="display:flex; gap:6px; margin-bottom:12px;">
+      <button onclick="pasteSymbolList()" style="flex:1; padding:10px; background:#007AFF; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Cargar Texto</button>
+      <label style="flex:1; padding:10px; background:#007AFF; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        📁 Archivo
+        <input type="file" id="fileInput" accept=".txt,.csv" style="display:none;" onchange="loadFile(event)"/>
+      </label>
+    </div>
+
+    <div class="rate-limit">
+      Limite API: ${state.queriesUsed}/8 consultas este minuto
+      <br/>Velocidad: Una cada 20 segundos (máx 3/minuto)
+    </div>
+
+    ${state.symbols.length > 0 ? `
+      <div style="display:flex; gap:6px; margin-bottom:12px;">
+        <button onclick="startAnalysis()" ${state.analyzing ? 'disabled' : ''} style="flex:1; padding:10px; background:#34C759; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+          ${state.analyzing ? 'Analizando...' : '▶ Iniciar Análisis'}
+        </button>
+        <button onclick="clearSymbols()" style="flex:1; padding:10px; background:#FF3B30; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">Limpiar Lista</button>
+      </div>
+    ` : ''}
+
+    <span class="label">Resultados (${state.symbols.length})</span>
+    ${state.symbols.length === 0 ? `<p style="color:#666; font-size:13px; text-align:center; padding:20px 0;">Añade símbolos para empezar</p>` : ''}
+    ${state.symbols.map((sym, i) => {
+      const result = state.analysisResults.find(r => r.sym === sym);
+      const score = result ? result.score : '—';
+      const status = result ? 'Completado ✓' : (state.analyzing ? 'Esperando...' : '');
+      const scoreClass = typeof score === 'number' ? `score-${score}` : '';
+      return `<div class="table-row">
+        <div class="table-sym">${sym}</div>
+        <div class="table-score">
+          ${typeof score === 'number' ? `<span class="score-badge ${scoreClass}">${score}/5</span>` : '<span style="color:#666;">—</span>'}
+        </div>
+        <div style="display:flex; gap:4px;">
+          <div class="table-status" style="flex:1;">${status}</div>
+          <button class="table-btn" onclick="removeSymbol(${i})" style="background:#FF3B30; width:32px; padding:6px;">✕</button>
+        </div>
+      </div>`;
+    }).join('')}`;
+  }
+
+  html += `</div><style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>`;
+  root.innerHTML = html;
+  document.getElementById('ticker')?.addEventListener('keypress', e => e.key === 'Enter' && load());
+}
+
+function setTab(tab) { setState({tab}); }
+function saveKey() {
+  const key = document.getElementById('keyInput')?.value?.trim();
+  if (key) {
+    localStorage.setItem('td_key', key);
+    setState({apiKey: key});
+  }
+}
+function clearKey() {
+  localStorage.removeItem('td_key');
+  setState({apiKey: '', data: null, error: null});
+}
+function setCurrency(curr) { setState({currency: curr}); }
+
+async function load() {
+  const ticker = document.getElementById('ticker')?.value?.trim().toUpperCase() || state.ticker;
+  if (!ticker) return;
+  setState({ticker, loading: true, data: null, error: null});
+  try {
+    const data = await fetchData(ticker, state.apiKey);
+    setState({data, loading: false});
+  } catch (e) {
+    setState({error: e.message, loading: false});
+  }
+}
+
+function addSymbol() {
+  const input = document.getElementById('symbolInput');
+  const sym = input?.value?.trim().toUpperCase();
+  if (sym && !state.symbols.includes(sym)) {
+    setState({symbols: [...state.symbols, sym]});
+    input.value = '';
+  }
+}
+
+function removeSymbol(i) {
+  setState({symbols: state.symbols.filter((_, idx) => idx !== i)});
+}
+
+function pasteSymbolList() {
+  const text = document.getElementById('symbolListInput')?.value || '';
+  const syms = text.split(/[\n,]+/).map(s => s.trim().toUpperCase()).filter(s => s && s.length <= 10);
+  const unique = [...new Set(syms)];
+  setState({symbols: unique});
+}
+
+function loadFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const text = e.target?.result || '';
+    const syms = text.split(/[\n,;\s]+/).map(s => s.trim().toUpperCase()).filter(s => s && s.length <= 10);
+    const unique = [...new Set(syms)];
+    setState({symbols: unique});
+    document.getElementById('fileInput').value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearSymbols() {
+  setState({symbols: [], analysisResults: []});
+}
+
+async function startAnalysis() {
+  if (state.analyzing || state.symbols.length === 0) return;
+  setState({analyzing: true, analysisResults: []});
+  
+  const results = [];
+  for (const sym of state.symbols) {
+    let success = false;
+    let retries = 0;
+    const maxRetries = 2;
+    
+    while (!success && retries <= maxRetries) {
+      try {
+        const data = await fetchData(sym, state.apiKey);
+        const score = evaluateConditions(data);
+        
+        // Si hay resultado, marcarlo como éxito
+        if (data && data.price > 0) {
+          results.push({sym, score});
+          success = true;
+        } else {
+          // Sin datos válidos, reintentar
+          retries++;
+          if (retries > maxRetries) {
+            results.push({sym, score: null});
+            success = true;
+          } else {
+            setState({analysisResults: results});
+            await new Promise(resolve => setTimeout(resolve, 15000));
+          }
+        }
+      } catch (e) {
+        const errorMsg = e.message || 'Error desconocido';
+        
+        // Si es el error específico de créditos agotados, esperar y reintentar
+        if (errorMsg.includes('You have run out of API credits for the current minute')) {
+          results.push({sym, score: null});
+          setState({analysisResults: results});
+          // Esperar 15 segundos adicionales y reintentar
+          await new Promise(resolve => setTimeout(resolve, 15000));
+        } else {
+          retries++;
+          if (retries > maxRetries) {
+            // Se agotaron los reintentos
+            results.push({sym, score: null});
+            success = true;
+          } else {
+            // Reintentar después de esperar
+            setState({analysisResults: results});
+            await new Promise(resolve => setTimeout(resolve, 15000));
+          }
+        }
+      }
+    }
+    
+    setState({analysisResults: results});
+    // Esperar 20 segundos entre consultas
+    await new Promise(resolve => setTimeout(resolve, 20000));
+  }
+  setState({analyzing: false});
+}
+
+render();
+</script>
+</body>
+</html>
