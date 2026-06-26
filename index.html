@@ -170,24 +170,19 @@ function fmtDate(str, mode) {
 
 async function fetchExchangeRate() {
   try {
-    // Obtener tipo de cambio del BCE (European Central Bank)
     const res = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
     const xml = await res.text();
-    // Buscar el rate del USD en el XML
     const match = xml.match(/currency='USD'[^>]*rate='([^']*)/);
     const rate = match ? parseFloat(match[1]) : null;
-    // Invertir: si 1 EUR = 1.15 USD, entonces 1 USD = 1/1.15 = 0.87 EUR
     if (rate) {
       localStorage.setItem('exchange_rate', (1 / rate).toFixed(4));
       return 1 / rate;
     }
   } catch (e) {}
   
-  // Si falla, intentar usar el guardado
   const saved = localStorage.getItem('exchange_rate');
   if (saved) return parseFloat(saved);
   
-  // Si no hay guardado, pedir al usuario
   const userRate = prompt('No se pudo obtener el tipo de cambio del BCE.\n\n¿Cuál es el tipo USD/EUR?\n(Ej: 0.87 para 1 USD = 0.87 EUR)');
   if (userRate) {
     const rate = parseFloat(userRate);
@@ -197,8 +192,7 @@ async function fetchExchangeRate() {
     }
   }
   
-  return 0.87; // Último fallback
-}
+  return 0.87;
 }
 
 async function fetchData(sym, key) {
@@ -580,12 +574,10 @@ async function startAnalysis() {
         const data = await fetchData(sym, state.apiKey);
         const score = evaluateConditions(data);
         
-        // Si hay resultado, marcarlo como éxito
         if (data && data.price > 0) {
           results.push({sym, score});
           success = true;
         } else {
-          // Sin datos válidos, reintentar
           retries++;
           if (retries > maxRetries) {
             results.push({sym, score: null});
@@ -598,20 +590,16 @@ async function startAnalysis() {
       } catch (e) {
         const errorMsg = e.message || 'Error desconocido';
         
-        // Si es el error específico de créditos agotados, esperar y reintentar
         if (errorMsg.includes('You have run out of API credits for the current minute')) {
           results.push({sym, score: null});
           setState({analysisResults: results});
-          // Esperar 15 segundos adicionales y reintentar
           await new Promise(resolve => setTimeout(resolve, 15000));
         } else {
           retries++;
           if (retries > maxRetries) {
-            // Se agotaron los reintentos
             results.push({sym, score: null});
             success = true;
           } else {
-            // Reintentar después de esperar
             setState({analysisResults: results});
             await new Promise(resolve => setTimeout(resolve, 15000));
           }
@@ -620,7 +608,6 @@ async function startAnalysis() {
     }
     
     setState({analysisResults: results});
-    // Esperar 20 segundos entre consultas
     await new Promise(resolve => setTimeout(resolve, 20000));
   }
   setState({analyzing: false});
